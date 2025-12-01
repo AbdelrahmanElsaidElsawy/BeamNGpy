@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Iterable, List, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple, cast
 
 from beamngpy.logging import BNGError, BNGValueError, create_warning
 from beamngpy.scenario import Scenario, ScenarioObject
@@ -238,6 +238,10 @@ class ScenarioApi(Api):
     def restart(self) -> None:
         """
         Restarts a running scenario.
+        
+        Note:
+            After restarting, all vehicle control inputs (steering, throttle, brake, etc.)
+            are cleared to prevent vehicles from retaining old control states.
         """
         if not self._beamng._scenario:
             raise BNGError("Need to have a scenario loaded to restart it.")
@@ -258,6 +262,9 @@ class ScenarioApi(Api):
         for vehicle in self._beamng._scenario.vehicles.values():
             if vehicle.vid in vehicles_to_reconnect and not vehicle.is_connected():
                 vehicle.connect(self._beamng)
+            # Clear control inputs after reconnecting to prevent vehicles from retaining old control states
+            if vehicle.is_connected():
+                vehicle.control(steering=0.0, throttle=0.0, brake=0.0, parkingbrake=0.0)
 
     def stop(self) -> None:
         """
@@ -338,6 +345,53 @@ class ScenarioApi(Api):
         data["road"] = road
         resp = self._send(data).recv("DecalRoadEdges")
         return resp["edges"]
+
+    def get_road_lane_info(self, road: str) -> Dict[str, Any]:
+        """
+        Retrieves lane information for a specific DecalRoad.
+
+        Args:
+            road: Name/ID of the road to get lane information from.
+
+        Returns:
+            A dictionary containing lane information with the following keys:
+                - ``lanes_left``: Number of lanes on the left side (if available)
+                - ``lanes_right``: Number of lanes on the right side (if available)
+                - ``one_way``: Whether the road is one-way (bool)
+                - ``drivability``: Drivability value of the road (int)
+                - ``flip_direction``: Whether the road direction is flipped (bool)
+                - ``material``: Material name of the road (str, if available)
+                - ``width``: Road width information (if available)
+
+        Raises:
+            BNGError: If the road is not found in the current scenario.
+        """
+        road_network = self.get_road_network(include_edges=False, drivable_only=False)
+        
+        if road not in road_network:
+            raise BNGError(f"Road '{road}' not found in the current scenario.")
+        
+        road_data = road_network[road]
+        
+        lane_info: Dict[str, Any] = {}
+        
+        # Extract lane information from road data
+        if "lanesLeft" in road_data:
+            lane_info["lanes_left"] = road_data["lanesLeft"]
+        if "lanesRight" in road_data:
+            lane_info["lanes_right"] = road_data["lanesRight"]
+        if "oneWay" in road_data:
+            lane_info["one_way"] = road_data["oneWay"]
+        if "drivability" in road_data:
+            lane_info["drivability"] = road_data["drivability"]
+        if "flipDirection" in road_data:
+            lane_info["flip_direction"] = road_data["flipDirection"]
+        if "Material" in road_data:
+            lane_info["material"] = road_data["Material"]
+        if "width" in road_data:
+            lane_info["width"] = road_data["width"]
+        
+        return lane_info
 
     def load_trackbuilder_track(self, path: str):
         """

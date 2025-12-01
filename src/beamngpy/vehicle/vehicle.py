@@ -494,7 +494,7 @@ class Vehicle:
         return self._ge_api.switch()
 
     def teleport(
-        self, pos: Float3, rot_quat: Quat | None = None, reset: bool = True
+        self, pos: Float3, rot_quat: Quat | None = None, reset: bool = True, cling: bool = False
     ) -> bool:
         """
         Teleports the vehicle to the given position with the given
@@ -504,8 +504,11 @@ class Vehicle:
             pos: The target position as an (x,y,z) tuple containing world-space coordinates.
             rot_quat: Optional tuple (x, y, z, w) specifying vehicle rotation as quaternion.
             reset: Specifies if the vehicle will be reset to its initial state during teleport (including its velocity).
+            cling: If True, the z-coordinate of the vehicle's position will be set to the ground
+                   level at the given position to avoid teleporting the vehicle below ground
+                   or in the air. Defaults to False.
         """
-        return self._ge_api.teleport(pos, rot_quat, reset)
+        return self._ge_api.teleport(pos, rot_quat, reset, cling)
 
     def get_part_options(self) -> StrDict:
         """

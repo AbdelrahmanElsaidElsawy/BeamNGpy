@@ -52,9 +52,9 @@ class GEVehiclesApi(Api):
         return self._beamng.switch_vehicle(self.vehicle)
 
     def teleport(
-        self, pos: Float3, rot_quat: Quat | None = None, reset: bool = True
+        self, pos: Float3, rot_quat: Quat | None = None, reset: bool = True, cling: bool = False
     ) -> bool:
-        return self._beamng.teleport_vehicle(self.vehicle.vid, pos, rot_quat, reset)
+        return self._beamng.teleport_vehicle(self.vehicle.vid, pos, rot_quat, reset, cling)
 
     def get_part_options(self) -> StrDict:
         data = dict(type="GetPartOptions")

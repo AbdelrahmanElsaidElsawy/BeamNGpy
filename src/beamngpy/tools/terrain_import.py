@@ -59,16 +59,51 @@ class Terrain_Importer:
             bng: The BeamNG instance.
             png_path: The path of the .png file (16-bit greyscale, uncompressed), which contains values in the range [0, 65535].
             roads: The list of roads which will be laid on the modified terrain (the terrain will also be terraformed to them).
+                   Each road is a list of nodes. Each node can be specified in two formats:
+                   1. Dictionary format: {"x": float, "y": float, "width": float} (recommended)
+                   2. List format: [x, y, z, width] where x, y, z are coordinates and width is the road width
+                   Example:
+                   roads = [
+                       [  # First road
+                           {"x": -800.0, "y": 100.0, "width": 7.0},
+                           {"x": -700.0, "y": 100.0, "width": 7.0},
+                       ],
+                       [  # Second road
+                           {"x": 100.0, "y": -800.0, "width": 7.0},
+                           {"x": 100.0, "y": -700.0, "width": 7.0},
+                       ]
+                   ]
             DOI: The domain of influence parameter of the terraforming process.
             margin: The margin parameter (around the roads).
             zMax: Sets the terrain prominence, which will be [0, zMax]. This is how the .png values will be scaled when modifying the terrain.
         """
         logger = getLogger(f"{LOGGER_ID}.Terrain_Importer")
         logger.setLevel(DEBUG)
+        
+        # Normalize road format: convert list format [x, y, z, width] to dict format {"x": x, "y": y, "width": width}
+        normalized_roads = []
+        for road in roads:
+            normalized_road = []
+            for node in road:
+                if isinstance(node, dict):
+                    # Already in dict format, use as-is
+                    normalized_road.append(node)
+                elif isinstance(node, (list, tuple)) and len(node) >= 3:
+                    # Convert from list format [x, y, z, width] or [x, y, width]
+                    if len(node) >= 4:
+                        x, y, z, width = node[0], node[1], node[2], node[3]
+                    else:
+                        x, y, width = node[0], node[1], node[2]
+                        z = 0.0  # Default z if not provided
+                    normalized_road.append({"x": float(x), "y": float(y), "width": float(width)})
+                else:
+                    raise ValueError(f"Invalid road node format: {node}. Expected dict with 'x', 'y', 'width' keys or list [x, y, z, width]")
+            normalized_roads.append(normalized_road)
+        
         d = dict(
             type="TerrainAndRoadImport",
             pngPath=png_path,
-            roads=roads,
+            roads=normalized_roads,
             DOI=DOI,
             margin=margin,
             zMax=zMax,
@@ -87,13 +122,38 @@ class Terrain_Importer:
             bng: The BeamNG instance.
             peaks: The list of 3D points which represent desired peaks and troughs in the terrain.
             roads: The list of roads which will be laid on the modified terrain (the terrain will also be terraformed to them).
+                   Each road is a list of nodes. Each node can be specified in two formats:
+                   1. Dictionary format: {"x": float, "y": float, "width": float} (recommended)
+                   2. List format: [x, y, z, width] where x, y, z are coordinates and width is the road width
+                   See terrain_and_road_import() for format examples.
             DOI: The domain of influence parameter of the terraforming process.
             margin: The margin parameter (around the roads).
         """
         logger = getLogger(f"{LOGGER_ID}.Terrain_Importer")
         logger.setLevel(DEBUG)
+        
+        # Normalize road format: convert list format [x, y, z, width] to dict format {"x": x, "y": y, "width": width}
+        normalized_roads = []
+        for road in roads:
+            normalized_road = []
+            for node in road:
+                if isinstance(node, dict):
+                    # Already in dict format, use as-is
+                    normalized_road.append(node)
+                elif isinstance(node, (list, tuple)) and len(node) >= 3:
+                    # Convert from list format [x, y, z, width] or [x, y, width]
+                    if len(node) >= 4:
+                        x, y, z, width = node[0], node[1], node[2], node[3]
+                    else:
+                        x, y, width = node[0], node[1], node[2]
+                        z = 0.0  # Default z if not provided
+                    normalized_road.append({"x": float(x), "y": float(y), "width": float(width)})
+                else:
+                    raise ValueError(f"Invalid road node format: {node}. Expected dict with 'x', 'y', 'width' keys or list [x, y, z, width]")
+            normalized_roads.append(normalized_road)
+        
         d = dict(
-            type="PeaksAndRoadImport", peaks=peaks, roads=roads, DOI=DOI, margin=margin
+            type="PeaksAndRoadImport", peaks=peaks, roads=normalized_roads, DOI=DOI, margin=margin
         )
         response = bng.connection.send(d)
         response.ack("CompletedPeaksAndRoadImport")
