@@ -59,20 +59,28 @@ class Terrain_Importer:
             bng: The BeamNG instance.
             png_path: The path of the .png file (16-bit greyscale, uncompressed), which contains values in the range [0, 65535].
             roads: The list of roads which will be laid on the modified terrain (the terrain will also be terraformed to them).
-                   Each road is a list of nodes. Each node can be specified in two formats:
-                   1. Dictionary format: {"x": float, "y": float, "width": float} (recommended)
-                   2. List format: [x, y, z, width] where x, y, z are coordinates and width is the road width
-                   Example:
+                   Each road is a list of nodes. Each node MUST be a dictionary with the following keys:
+                   - "x": x-coordinate (float)
+                   - "y": y-coordinate (float)
+                   - "width": road width in meters (float)
+                   
+                   The z-coordinate is NOT needed - the terrain heightmap determines the road elevation.
+                   
+                   Format:
                    roads = [
                        [  # First road
                            {"x": -800.0, "y": 100.0, "width": 7.0},
                            {"x": -700.0, "y": 100.0, "width": 7.0},
+                           {"x": -600.0, "y": 100.0, "width": 7.0},
                        ],
                        [  # Second road
                            {"x": 100.0, "y": -800.0, "width": 7.0},
                            {"x": 100.0, "y": -700.0, "width": 7.0},
+                           {"x": 100.0, "y": -600.0, "width": 7.0},
                        ]
                    ]
+                   
+                   See examples/terrain_and_road_import_example.py for a complete working example.
             DOI: The domain of influence parameter of the terraforming process.
             margin: The margin parameter (around the roads).
             zMax: Sets the terrain prominence, which will be [0, zMax]. This is how the .png values will be scaled when modifying the terrain.
@@ -80,51 +88,33 @@ class Terrain_Importer:
         logger = getLogger(f"{LOGGER_ID}.Terrain_Importer")
         logger.setLevel(DEBUG)
         
-        # Normalize road format: convert list format [x, y, z, width] to dict format {"x": x, "y": y, "width": width}
-        # Note: z coordinate is ignored as terrain heightmap determines the road elevation
-        normalized_roads = []
-        format_converted = False
-        
+        # Validate road format - roads must be in dictionary format
+        # Each node must be a dict with "x", "y", and "width" keys
         for road_idx, road in enumerate(roads):
-            normalized_road = []
+            if not isinstance(road, (list, tuple)):
+                raise ValueError(
+                    f"Invalid road format at index {road_idx}: road must be a list of nodes. "
+                    f"Got: {type(road)}"
+                )
             for node_idx, node in enumerate(road):
-                if isinstance(node, dict):
-                    # Already in dict format, use as-is
-                    if "x" not in node or "y" not in node or "width" not in node:
-                        raise ValueError(
-                            f"Invalid road node dict format at road {road_idx}, node {node_idx}: "
-                            f"missing required keys. Expected 'x', 'y', 'width'. Got: {list(node.keys())}"
-                        )
-                    normalized_road.append(node)
-                elif isinstance(node, (list, tuple)) and len(node) >= 3:
-                    # Convert from list format [x, y, z, width] or [x, y, width]
-                    format_converted = True
-                    if len(node) >= 4:
-                        x, y, z, width = node[0], node[1], node[2], node[3]
-                        logger.debug(
-                            f"Converting road node from list format [x, y, z, width] to dict format. "
-                            f"Road {road_idx}, node {node_idx}: z={z} will be ignored (terrain determines elevation)"
-                        )
-                    else:
-                        x, y, width = node[0], node[1], node[2]
-                    normalized_road.append({"x": float(x), "y": float(y), "width": float(width)})
-                else:
+                if not isinstance(node, dict):
                     raise ValueError(
                         f"Invalid road node format at road {road_idx}, node {node_idx}: {node}. "
-                        f"Expected dict with 'x', 'y', 'width' keys or list [x, y, z, width] or [x, y, width]"
+                        f"Expected dictionary with 'x', 'y', 'width' keys. "
+                        f"Got: {type(node)}. "
+                        f"See examples/terrain_and_road_import_example.py for correct format."
                     )
-            normalized_roads.append(normalized_road)
-        
-        if format_converted:
-            logger.info(
-                "Terrain_Importer: Converted road format from list to dictionary format. "
-                "This ensures compatibility with BeamNG's expected format."
-            )
+                if "x" not in node or "y" not in node or "width" not in node:
+                    raise ValueError(
+                        f"Invalid road node dict format at road {road_idx}, node {node_idx}: "
+                        f"missing required keys. Expected 'x', 'y', 'width'. Got: {list(node.keys())}. "
+                        f"See examples/terrain_and_road_import_example.py for correct format."
+                    )
         
         d = dict(
             type="TerrainAndRoadImport",
             pngPath=png_path,
-            roads=normalized_roads,
+            roads=roads,
             DOI=DOI,
             margin=margin,
             zMax=zMax,
@@ -143,59 +133,57 @@ class Terrain_Importer:
             bng: The BeamNG instance.
             peaks: The list of 3D points which represent desired peaks and troughs in the terrain.
             roads: The list of roads which will be laid on the modified terrain (the terrain will also be terraformed to them).
-                   Each road is a list of nodes. Each node can be specified in two formats:
-                   1. Dictionary format: {"x": float, "y": float, "width": float} (recommended)
-                   2. List format: [x, y, z, width] where x, y, z are coordinates and width is the road width
-                   See terrain_and_road_import() for format examples.
+                   Each road is a list of nodes. Each node MUST be a dictionary with the following keys:
+                   - "x": x-coordinate (float)
+                   - "y": y-coordinate (float)
+                   - "width": road width in meters (float)
+                   
+                   The z-coordinate is NOT needed - the terrain heightmap determines the road elevation.
+                   
+                   Format:
+                   roads = [
+                       [  # First road
+                           {"x": -800.0, "y": 100.0, "width": 7.0},
+                           {"x": -700.0, "y": 100.0, "width": 7.0},
+                       ],
+                       [  # Second road
+                           {"x": 100.0, "y": -800.0, "width": 7.0},
+                           {"x": 100.0, "y": -700.0, "width": 7.0},
+                       ]
+                   ]
+                   
+                   See examples/terrain_and_road_import_example.py for a complete working example.
             DOI: The domain of influence parameter of the terraforming process.
             margin: The margin parameter (around the roads).
         """
         logger = getLogger(f"{LOGGER_ID}.Terrain_Importer")
         logger.setLevel(DEBUG)
         
-        # Normalize road format: convert list format [x, y, z, width] to dict format {"x": x, "y": y, "width": width}
-        # Note: z coordinate is ignored as terrain heightmap determines the road elevation
-        normalized_roads = []
-        format_converted = False
-        
+        # Validate road format - roads must be in dictionary format
+        # Each node must be a dict with "x", "y", and "width" keys
         for road_idx, road in enumerate(roads):
-            normalized_road = []
+            if not isinstance(road, (list, tuple)):
+                raise ValueError(
+                    f"Invalid road format at index {road_idx}: road must be a list of nodes. "
+                    f"Got: {type(road)}"
+                )
             for node_idx, node in enumerate(road):
-                if isinstance(node, dict):
-                    # Already in dict format, use as-is
-                    if "x" not in node or "y" not in node or "width" not in node:
-                        raise ValueError(
-                            f"Invalid road node dict format at road {road_idx}, node {node_idx}: "
-                            f"missing required keys. Expected 'x', 'y', 'width'. Got: {list(node.keys())}"
-                        )
-                    normalized_road.append(node)
-                elif isinstance(node, (list, tuple)) and len(node) >= 3:
-                    # Convert from list format [x, y, z, width] or [x, y, width]
-                    format_converted = True
-                    if len(node) >= 4:
-                        x, y, z, width = node[0], node[1], node[2], node[3]
-                        logger.debug(
-                            f"Converting road node from list format [x, y, z, width] to dict format. "
-                            f"Road {road_idx}, node {node_idx}: z={z} will be ignored (terrain determines elevation)"
-                        )
-                    else:
-                        x, y, width = node[0], node[1], node[2]
-                    normalized_road.append({"x": float(x), "y": float(y), "width": float(width)})
-                else:
+                if not isinstance(node, dict):
                     raise ValueError(
                         f"Invalid road node format at road {road_idx}, node {node_idx}: {node}. "
-                        f"Expected dict with 'x', 'y', 'width' keys or list [x, y, z, width] or [x, y, width]"
+                        f"Expected dictionary with 'x', 'y', 'width' keys. "
+                        f"Got: {type(node)}. "
+                        f"See examples/terrain_and_road_import_example.py for correct format."
                     )
-            normalized_roads.append(normalized_road)
-        
-        if format_converted:
-            logger.info(
-                "Terrain_Importer: Converted road format from list to dictionary format. "
-                "This ensures compatibility with BeamNG's expected format."
-            )
+                if "x" not in node or "y" not in node or "width" not in node:
+                    raise ValueError(
+                        f"Invalid road node dict format at road {road_idx}, node {node_idx}: "
+                        f"missing required keys. Expected 'x', 'y', 'width'. Got: {list(node.keys())}. "
+                        f"See examples/terrain_and_road_import_example.py for correct format."
+                    )
         
         d = dict(
-            type="PeaksAndRoadImport", peaks=peaks, roads=normalized_roads, DOI=DOI, margin=margin
+            type="PeaksAndRoadImport", peaks=peaks, roads=roads, DOI=DOI, margin=margin
         )
         response = bng.connection.send(d)
         response.ack("CompletedPeaksAndRoadImport")
