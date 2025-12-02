@@ -74,26 +74,36 @@ def main():
 
     # NOTE: You need to provide a valid heightmap PNG file path
     # Replace this with your actual heightmap path
+    # For this example, we'll use a placeholder - uncomment and set your path to test
     HEIGHTMAP_PATH = "path/to/your/heightmap.png"  # 16-bit greyscale PNG
 
     print("\n" + "-" * 80)
     print("ATTEMPTING TO IMPORT TERRAIN AND ROADS (WRONG FORMAT)")
     print("-" * 80)
-    print("\n⚠️  This will fail - roads won't appear!")
-    print("   The terrain will import, but roads will be missing.")
-    print("\nTo actually run this, uncomment the code below and provide a valid heightmap:")
+    print("\n⚠️  WARNING: This format does NOT work!")
+    print("   The terrain will import, but roads will NOT appear.")
+    print("   This demonstrates the issue from GitHub issue #309.")
+    print("\nTo test this scenario:")
+    print("   1. Uncomment the import code below")
+    print("   2. Set HEIGHTMAP_PATH to a valid 16-bit greyscale PNG file")
+    print("   3. Run the script")
+    print("   4. Observe that terrain appears but roads don't")
 
     # Uncomment to actually test (will fail - roads won't appear):
     # print("\nImporting terrain and roads with wrong format...")
-    # Terrain_Importer.terrain_and_road_import(
-    #     bng=beamng,
-    #     png_path=str(HEIGHTMAP_PATH),
-    #     roads=roads,  # Wrong format - roads won't appear!
-    #     DOI=DOMAIN_OF_INFLUENCE,
-    #     margin=MARGIN,
-    #     zMax=Z_MAX
-    # )
-    # print("⚠️  Check the scene - roads should NOT be visible!")
+    # try:
+    #     Terrain_Importer.terrain_and_road_import(
+    #         bng=beamng,
+    #         png_path=str(HEIGHTMAP_PATH),
+    #         roads=roads,  # Wrong format - roads won't appear!
+    #         DOI=DOMAIN_OF_INFLUENCE,
+    #         margin=MARGIN,
+    #         zMax=Z_MAX
+    #     )
+    #     print("⚠️  Import completed, but check the scene - roads should NOT be visible!")
+    # except Exception as e:
+    #     print(f"❌ Error: {e}")
+    #     print("   This may be due to invalid heightmap path or format validation.")
 
     vehicle.teleport((0.0, 0.0, 250.0), cling=True)
     vehicle.switch()

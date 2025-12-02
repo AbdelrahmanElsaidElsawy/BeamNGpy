@@ -78,25 +78,35 @@ def main():
 
     # NOTE: You need to provide a valid heightmap PNG file path
     # Replace this with your actual heightmap path
+    # For this example, we'll use a placeholder - uncomment and set your path to test
     HEIGHTMAP_PATH = "path/to/your/heightmap.png"  # 16-bit greyscale PNG
 
     print("\n" + "-" * 80)
     print("IMPORTING TERRAIN AND ROADS (CORRECT FORMAT)")
     print("-" * 80)
-    print("\n✅ This will work - roads will appear!")
-    print("\nTo actually run this, uncomment the code below and provide a valid heightmap:")
+    print("\n✅ This format works correctly!")
+    print("   Roads will appear in the scene.")
+    print("\nTo test this scenario:")
+    print("   1. Uncomment the import code below")
+    print("   2. Set HEIGHTMAP_PATH to a valid 16-bit greyscale PNG file")
+    print("   3. Run the script")
+    print("   4. Observe that both terrain and roads appear correctly")
 
     # Uncomment to actually test (will work - roads will appear):
     # print("\nImporting terrain and roads with correct format...")
-    # Terrain_Importer.terrain_and_road_import(
-    #     bng=beamng,
-    #     png_path=str(HEIGHTMAP_PATH),
-    #     roads=roads,  # Correct format - roads will appear!
-    #     DOI=DOMAIN_OF_INFLUENCE,
-    #     margin=MARGIN,
-    #     zMax=Z_MAX
-    # )
-    # print("✅ Check the scene - roads should be visible!")
+    # try:
+    #     Terrain_Importer.terrain_and_road_import(
+    #         bng=beamng,
+    #         png_path=str(HEIGHTMAP_PATH),
+    #         roads=roads,  # Correct format - roads will appear!
+    #         DOI=DOMAIN_OF_INFLUENCE,
+    #         margin=MARGIN,
+    #         zMax=Z_MAX
+    #     )
+    #     print("✅ Import completed - check the scene, roads should be visible!")
+    # except Exception as e:
+    #     print(f"❌ Error: {e}")
+    #     print("   This may be due to invalid heightmap path.")
 
     vehicle.teleport((0.0, 0.0, 250.0), cling=True)
     vehicle.switch()
